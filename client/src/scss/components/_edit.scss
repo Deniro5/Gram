@@ -1,0 +1,161 @@
+.editUserName {  
+    display: block;
+    font-size: 1.3em;
+    margin:auto;
+    margin-bottom: 0.83em;
+    margin-left: -2px;
+    margin-right: 0;
+    font-weight: bold;
+    border:none;    
+}
+
+.editBio {  
+    display: block;
+    font-size: 1.2em;
+    margin-bottom: 0.83em;
+    margin-left: 0;
+    margin-right: 0;
+    border:none;
+    resize: none;
+    width:100%;
+    height: 60px;
+}
+
+.editImageDelete {
+    color:red;
+    font-weight: bold;
+    font-size:28px;
+    position: absolute;
+    top:-30px;
+    left:5px;
+}
+
+.uploadIcon {
+    color:lightgrey;
+    width:10;
+    height: 3000px;
+    cursor: pointer;
+    transform: scale(15);
+    margin-top: 150px;
+    margin-bottom: 150px;
+}
+
+.uploadIcon:hover {
+    color: rgb(0, 0, 110)
+}
+
+.uploadImageContainer {
+    width:95%;
+    min-width:300px;
+    max-width: 500px;
+    margin:auto;
+    margin-top:5vh;
+    background:white;
+    text-align:center;
+    padding-bottom:30px;
+    position: relative;
+}
+
+.uploadImageContainer img {
+    width:300px;
+    height:300px;
+    margin-top:20px;
+    vertical-align: top;
+    display: inline-block;
+}
+
+.uploadImageContainer button {
+    display:block;
+    width: 100px;
+    background: rgb(0,0,110);
+    color:white;
+    border:none;
+    height:30px;
+    margin:auto;
+    margin-top:20px;
+    font-size:12px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.uploadCaption {
+    padding:10px;
+    height:120px;
+    width:90%;
+    font-size:14px;
+    margin-top:20px;
+    border: 1px solid lightgrey;
+    overflow: auto;
+    outline: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    resize: none; /*remove the resize handle on the bottom right*/
+}
+
+.uploadClose {
+    position:absolute;
+    top:-25px;
+    left:5px;
+    font-size:24px;
+    cursor: pointer;
+}
+
+.editImage {
+    position: relative;
+}
+
+.editImage input { 
+    position: absolute;
+    top:0px;
+    height:100px;
+    width:100px;
+    border-radius: 90px;
+    background:red;
+    opacity:0;
+}
+
+.addImage {
+    position: relative;
+    display:inline-block;
+    width:50%;
+}
+
+.addImage input {
+    width:100px;
+    height:30px;
+    background:green;
+    position: absolute;
+    margin-top:20px;
+    left:50%;
+    margin-left:-50px;
+    cursor: pointer;
+    opacity: 0;
+}
+
+
+
+
+@media only screen and (max-width: 600px) {
+
+    .editUserName {  
+      width:100%;
+      text-align: center;
+    }
+    .editBio {  
+        text-align: center;
+    }
+    .editImage input { 
+        position: absolute;
+        top:0px;
+        height:250px;
+        width:250px;
+        border-radius: 360px;
+    }
+    
+  }
+
+
+
+
+

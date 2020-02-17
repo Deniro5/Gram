@@ -1,0 +1,38 @@
+@import './components/about.scss';
+@import './components/contact.scss';
+@import './components/footer.scss';
+@import './components/header.scss';
+@import './components/home.scss';
+@import './components/login.scss';
+@import './components/profile.scss';
+@import './components/edit.scss';
+
+
+body {
+  margin: 0;
+  font-family: "Palatino", "Lucida Grande", sans-serif
+}
+
+.hidden {
+  display:none;
+}
+
+.showMore {
+  width: 120px;
+  background: rgb(0,0,110);
+  color:white;
+  border:none;
+  height:40px;
+  margin-top:20px;
+  margin-bottom:20px;
+  font-size:12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition:0.5s
+}
+
+.showMore:hover {
+
+  background: rgb(0,0,80);
+  font-weight:bold;
+}

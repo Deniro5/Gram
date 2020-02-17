@@ -1,0 +1,72 @@
+.loginContainer {
+    background-image: url("background.png");
+    height:100vh;
+}
+
+.loginControls {
+    position:absolute;
+    height:450px;
+    width:300px;
+    margin-top:150px;
+    margin-left:-150px;
+    left: 50%;
+    border-radius: 5px;
+    border: 1px solid black;
+    background:rgba(122, 111, 111, 0.5);   
+}
+
+.loginControlsTabContainer {
+    height:50px;
+    width:100%;
+}
+
+.loginControlsTab {
+    height:50px;
+    background:rgb(0,0,110);
+    width:50%;
+    display: inline-block;
+    vertical-align: top;
+    text-align:center;
+    cursor: pointer;
+    transition: 0.5s;
+    color:white
+}
+
+.loginControlsTab:hover {
+    background: rgb(0, 0, 110);
+}
+
+.loginFieldContainer {
+    width:100%;
+    padding-left:45px;
+    margin-bottom:30px;
+
+}
+
+.loginFieldContainer input {
+    height:20px;
+    width:190px;
+    padding:5px;
+    border:1px solid rgb(0, 0, 110);
+    transition:0.3s;
+    border-radius: 3px;
+    font-size:16px;
+}
+
+.loginControls button {
+    width:140px;
+    height:40px;
+    margin:auto;
+    margin-top:50px;
+    display:block;
+    background: rgb(0,0,110);
+    color:white;
+    border:none;
+    font-size:16px;
+    cursor: pointer;
+}
+
+.unselected {
+    background:rgba(122, 111, 111, 0.1);
+    color:white
+}
