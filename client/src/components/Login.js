@@ -100,15 +100,15 @@ class Login extends Component {
                 </div>
                 <div className = "loginFieldContainer" style = {{marginTop: margTop + "px"}}> 
                   <p> Email: </p>
-                  <input ref= "email" placeholder = "Search..."/>
+                  <input ref= "email" />
                 </div>
                 <div className = "loginFieldContainer"> 
                   <p> Password: </p>
-                  <input  ref= "password"placeholder = "Search..." type = "password"/>
+                  <input  ref= "password" type = "password"/>
                 </div>
                 <div className = {"loginFieldContainer " + (this.state.signin ? "hidden" : " ")}> 
                   <p> Confirm Password: </p>
-                  <input ref= "confirm" placeholder = "Search..." type = "password"/>
+                  <input ref= "confirm"  type = "password"/>
                 </div>
                 <button onClick = {this.submit}> Submit </button>
               </div>
