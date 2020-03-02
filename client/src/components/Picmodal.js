@@ -92,7 +92,7 @@ class Picmodal extends Component {
                   <div className = "modalImageInfo">
                     <p style = {{cursor: "pointer",  fontSize: "18px"}}> <b> {this.props.user} </b> </p>
                     <p> {this.props.date} </p>
-                    <p> {this.props.likes} <img src = "../img/like.png"/> </p>
+                    <p> {this.props.likes} <img alt = "likes" src = "../img/like.png"/> </p>
                     <div className = "commentButtonContainer">
                     {commentButton}
                     </div>

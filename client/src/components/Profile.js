@@ -20,6 +20,7 @@ class Profile extends Component {
     currusername: "",
     userexists:false,
     loggedIn:false,
+    isLoaded: false,
   }
 
   componentWillMount() {
@@ -43,7 +44,10 @@ class Profile extends Component {
                 userimage: "http://localhost:8000/" + json.message[0].userImage,
                 userexists:true,
             })
-          }
+            }
+            this.setState({
+              isLoaded: true
+            })
         }); 
         if (localStorage.getItem("token") != null) {
           fetch('http://localhost:8000/users/userfromtoken/' + localStorage.getItem("token"), {
@@ -72,7 +76,7 @@ class Profile extends Component {
 
     routerWillLeave(nextState) { // return false to block navigation, true to allow
       if (nextState.action === 'POP') {
-        alert("hi")
+        
       }
     }
 
@@ -182,7 +186,14 @@ class Profile extends Component {
   render() {
     var posts = [];
     var count = 0;
-    if (!this.state.userexists) {
+
+    if (!this.state.isLoaded) {
+      return(    
+        <div className = "errorContainer">
+            <img src = "../img/loading.gif" className = "loadingWheel" alt = "loading"/>
+        </div>)
+    }
+    else if (!this.state.userexists) {
       return(    
         <div className = "errorContainer">
           <h1>Something Went Wrong...</h1> 
