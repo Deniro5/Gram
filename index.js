@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const path = require('path');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -9,6 +10,7 @@ mongoose.connect("mongodb+srv://TEST:TEST@cluster0-24ap0.mongodb.net/test?retryW
     useMongoClient: true
 });  //gotta get the new key
 
+app.use(express.static(path.join(__dirname, 'client/build')));
 
 app.use(morgan('dev'));   //allows for logging requests
 app.use(bodyParser.urlencoded({extended: false}));
@@ -44,6 +46,13 @@ app.use((error, req, res, next) => {
     })
 });
 
-//--------------------------------
 
-module.exports = app;
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname+'/client/build/index.html'));
+  });
+  
+  const port = process.env.PORT || 5000;
+  app.listen(port);
+  
+  console.log(`Password generator listening on ${port}`)
+//--------------------------------
