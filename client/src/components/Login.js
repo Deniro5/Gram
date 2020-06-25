@@ -1,121 +1,105 @@
-import React, { Component} from 'react';
+import React, { useState } from "react";
 
+const Login = (props) => {
+  const [signin, setSignin] = useState(true);
+  const [email, setEmail] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [password, setPassword] = useState("");
 
-class Login extends Component {
+  const guestLogin = () => {
+    submitHelper("login", "guest@guest.com", "g");
+  };
 
-  state = {
-    signin:true
-  }
+  const signIn = (status) => {
+    setEmail("");
+    setConfirm("");
+    setPassword("");
+    setSignin(status);
+  };
 
-  signin = (status) => {
-    this.refs.password.value = "";
-    this.refs.email.value = "";
-    this.refs.confirm.value = "";
-    this.setState({
-      signin: status
+  const submit = () => {
+    if (signin) {
+      submitHelper("login", email, password);
+    } else if (password === confirm) {
+      submitHelper("signup", email, password);
+    } else {
+      alert("Passwords do not match");
+    }
+  };
+
+  const submitHelper = (action, loginEmail, loginPassword) => {
+    fetch("users/" + action, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: loginEmail,
+        password: loginPassword,
+      }),
     })
-  }
-
-  onSubmit = () => {
-
- }
-
-  submit = () => {
-    if (this.state.signin) {
-      fetch('http://localhost:8000/users/login', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            "email": this.refs.email.value,
-            "password": this.refs.password.value
-        })
+      .then((res) => {
+        return res.json();
       })
-      .then((res) => res.json())
       .then((json) => {
-            if (json.message === "Auth successful") {
-              localStorage.setItem("token",json.token);  
-              //Take them to home here
-              alert("login successful")
-              this.props.history.push("/home")
-            }
-            else {
-              alert("Incorrect Username and/or Password");
-            }
-      }); 
-    }
-    else {
-      if (this.refs.password.value === this.refs.confirm.value) {
-          fetch('http://localhost:8000/users/signup', {
-            method: 'post',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-           },
-           body: JSON.stringify({
-               "email": this.refs.email.value,
-               "password": this.refs.password.value ,
-           })
-         })
-         .then((res) => res.json())
-         .then((json) => {
-               if (json.message === "user created") { 
-                //generate and store token if successful   
-                localStorage.setItem("token",json.token); 
-                alert("login successful")
-                this.props.history.push("/home")
-               }
-               else {
-                 alert(json.message);
-               }
-             }); 
-      }
-      else {
-        alert("Passwords do not match")
-      }
-    }
-  }
+        if (json.error) {
+          alert(json.error);
+        } else {
+          action === "signup" ? props.history.push("/edit") : props.history.push("/home");
+        }
+      });
+  };
 
-
-
-  render() {
-
-    var margTop = 0;
-    if (this.state.signin) {
-      margTop = 50
-    }
-
-
-    return (
-        <div className = "loginContainer">
-            <div className = "loginControls">
-              <div className = "loginControlsTabContainer" > 
-                <div onClick = {this.signin.bind(this,true)}  className = {"loginControlsTab " + (this.state.signin ? " " : "unselected")}>
-                  <p> Sign In </p>
-                </div>
-                <div onClick = {this.signin.bind(this,false)}  className = {"loginControlsTab " + (this.state.signin ? "unselected" : " ")}>
-                  <p> Register </p>
-                </div>
-                <div className = "loginFieldContainer" style = {{marginTop: margTop + "px"}}> 
-                  <p> Email: </p>
-                  <input ref= "email" />
-                </div>
-                <div className = "loginFieldContainer"> 
-                  <p> Password: </p>
-                  <input  ref= "password" type = "password"/>
-                </div>
-                <div className = {"loginFieldContainer " + (this.state.signin ? "hidden" : " ")}> 
-                  <p> Confirm Password: </p>
-                  <input ref= "confirm"  type = "password"/>
-                </div>
-                <button onClick = {this.submit}> Submit </button>
-              </div>
-            </div>
+  return (
+    <div className='loginContainer'>
+      <div className='loginControls'>
+        <div className='loginControlsTabContainer'>
+          <div
+            onClick={() => signIn(true)}
+            className={"loginControlsTab " + (signin ? " " : "unselected")}>
+            <p> Sign In </p>
+          </div>
+          <div
+            onClick={() => signIn(false)}
+            className={"loginControlsTab " + (signin ? "unselected" : " ")}>
+            <p> Register </p>
+          </div>
+          <img className='loginTitle' src='../img/title.png' alt='Tonyrogram' />
+          <div
+            className='loginFieldContainer'
+            style={{ marginTop: (signin ? 40 : 30) + "px" }}>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder='E-mail'
+            />
+          </div>
+          <div className='loginFieldContainer'>
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type='password'
+              placeholder='Password'
+            />
+          </div>
+          <div className={"loginFieldContainer " + (signin ? "hidden" : " ")}>
+            <input
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              type='password'
+              placeholder='Confirm Password'
+            />
+          </div>
+          <p id='guestLogin' onClick={guestLogin} className={signin ? "" : "hidden"}>
+            Log in as guest
+          </p>
+          <button onClick={submit}> Submit </button>
         </div>
-    );
-  }
-}
+      </div>
+    </div>
+  );
+};
 
 export default Login;

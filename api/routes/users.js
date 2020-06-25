@@ -1,675 +1,463 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const mongoose = require('mongoose');
-const User = require('../models/user');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const multer = require('multer');      //for accepting files ___________________________________________
+const mongoose = require("mongoose");
+const User = require("../models/user");
+const Post = require("../models/post");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const multer = require("multer"); //for accepting files ___________________________________________
 const storage = multer.diskStorage({
-    destination: function(req, file, cb) {    //these functions called when file is accepted. null always goes first there
-        cb(null, './uploads/')
-    },
-    filename: function (req, file ,cb) {
-        cb(null, file.originalname)             //whatever we put here is the file name
-    }
+  destination: function (req, file, cb) {
+    //these functions called when file is accepted. null always goes first there
+    cb(null, "./uploads/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname); //whatever we put here is the file name
+  },
 });
-const fileFilter = (req, file, cb) => {   // accept jpg and png reject everything else
-    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
-        cb(null, true);
-    }
-    else {
-     cb(null, false);
-    }
-
-}
-const upload = multer({ 
-    storage: storage,
-    limits: {                  // only take files over 5mb
-        fileSize: 1024*1024 *5 
-    },
-    fileFilter: fileFilter
-})
+const fileFilter = (req, file, cb) => {
+  // accept jpg and png reject everything else
+  if (file.mimetype === "image/jpeg" || file.mimetype === "image/png") {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
+const upload = multer({
+  storage: storage,
+  limits: {
+    // only take files over 5mb
+    fileSize: 1024 * 1024 * 5,
+  },
+  fileFilter: fileFilter,
+});
 
 //___________________________________________________________________________________________
-router.post('/test', (req , res , next) => {  //returns all users?
-    const user = new User ({   //Create the user 
+router.post("/signup", async (req, res, next) => {
+  try {
+    let user = await User.find({ email: req.body.email });
+    if (user.length >= 1) {
+      return res.status(409).json({
+        error: "Username is already in use", // 409 == conflict
+      });
+    }
+    bcrypt.hash(req.body.password, 10, async (err, hash) => {
+      const user = new User({
+        //Create the user
         _id: new mongoose.Types.ObjectId(),
-        email: "placeholder@placeholder.com",
-        password: "placeholder",
-        username: "Placeholder",
+        email: req.body.email,
+        password: hash,
+        username: "User",
         bio: "Placeholder bio",
         following: [],
+        followers: [],
         posts: [],
-        userImage: "uploads/defaultUser.png"     //default image
-    }); 
-    user.save()  
-    .then(result => {   //Save them and let them sign in here
-        res.status(201).json({
-            message: "user created",
-        })
-    })
-    .catch(err => {
-        console.log(err);
-        res.status(500).json({
-            error: err
+        userImage: "uploads/defaultUser.png", //default image
+      });
+      try {
+        let result = await user.save();
+        const token = jwt.sign({ userId: result._id }, "secret", { expiresIn: "1h" });
+        res.cookie("JWT", token, {
+          expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), //
+          httpOnly: false,
         });
-    })   
+        return res.status(201).json({
+          message: "login successful",
+        });
+      } catch (err) {
+        return res.status(500).json({
+          error: "Please enter a valid Email Address",
+        });
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      error: err,
+    });
+  }
 });
 
-
-
-  router.get('/', (req , res , next) => {  //returns all users?
-    User.find()    //check email first
-    .exec()
-    .then(user => { 
-        if (user.length < 1) {
-            res.status(401).json({
-                message: "user doesnt exist",    
-            })
-        } 
-        res.status(200).json({
-            message: user,   
-        })
-    }) 
-    .catch(err => {
-        console.log(err);
-        res.status(500).json({
-            error: err
+router.post("/login", async (req, res, next) => {
+  try {
+    let user = await User.find({ email: req.body.email });
+    if (user.length < 1) {
+      return res.status(409).json({
+        error: "Invalid email or password", //dont wanna tell them its coz of username coz that would give info to hack
+      });
+    }
+    bcrypt.compare(req.body.password, user[0].password, (err, result) => {
+      if (err) {
+        return res.status(401).json({
+          error: "Invalid email or password",
         });
-    })
+      }
+      if (result) {
+        const token = jwt.sign({ userId: user[0]._id }, "secret", { expiresIn: "1h" });
+        res.cookie("JWT", token, {
+          expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), //
+          httpOnly: false,
+        });
+        return res.status(201).json({
+          message: "login successful",
+          userImage: user[0].userImage,
+        });
+      }
+      return res.status(401).json({
+        error: "Invalid email or password", //dont wanna tell them its coz of username coz that would give info to hack
+      });
+    });
+  } catch (err) {
+    return res.status(500).json({
+      error: err,
+    });
+  }
 });
 
+router.post("/logout", (req, res, next) => {
+  res.clearCookie("JWT");
+  res.status(200).json({
+    message: "success",
+  });
+});
 
-
-router.get('/userfromtoken/:token', (req , res , next) => {
-    var token = req.params.token;
-    if (!token) {
-    return res.status(401).json({message: 'Must pass token'});
-    }
-// Check token that was passed by decoding token using secret
-    jwt.verify(token, "secret", function(err, user) {
-    if(!user) {
-        res.json({
-            user: ""  //there is no user so we return empty string
-        })
-    }
-    User.findOne({_id : user.userId})    //check email first  //get the id of the user so we can get rest of info
-    .exec()
-    .then(user => { 
+router.get("/userprofile", async (req, res, next) => {
+  if (!req.cookies.JWT) {
+    return res.status(401).json({
+      message: "Auth Failed",
+    });
+  }
+  jwt
+    .verify(req.cookies.JWT, "secret", async function (err, currUser) {
+      if (!currUser) {
+        return res.status(401).json({
+          message: "Auth Failed",
+        });
+      }
+      try {
+        var user = await User.find({ _id: currUser.userId });
         if (user.length < 1) {
-            res.status(401).json({
-                message: "user doesnt exist",    
-            })
-        } 
-        else {
-            res.status(200).json({
-                message: user,    
-            })
+          res.status(401).json({
+            message: "user doesnt exist",
+          });
         }
-     /*   var count = 0;
-        var ids = []
-        while (count < user.requests.length) {
-            ids.push(mongoose.Types.ObjectId(user.requests[count].id))
-            count++
-        } */
-        /*
-        User.find({
-            '_id': { $in: ids }
-        }) 
-        .exec()
-        .then(reqData => {
-            var count = 0;
-            var ids = []
+        var posts = await Post.find({ _id: { $in: user[0].posts } });
+        let followerInfo = await User.find({ _id: { $in: user[0].followers } }).select([
+          "userImage",
+          "username",
+        ]);
+        let followingInfo = await User.find({ _id: { $in: user[0].following } }).select([
+          "userImage",
+          "username",
+        ]);
 
-            while (count < user.contacts.length) {
-                if (user.contacts[count] != null) {
-                    ids.push(mongoose.Types.ObjectId(user.contacts[count]))
-                }
-                count++
-            }
-
-            User.find({
-                '_id': { $in: ids }
-            }) 
-            .exec()
-            .then(contactData => {
-                res.status(200).json({
-                    message: user,
-                    reqinfo: reqData,
-                    contactInfo: contactData
-                })
-            })
-            .catch(err => {
-                console.log(err);
-                res.status(500).json({
-                    error: err
-                });
-            })
-           
-        }) 
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
-            });
-        }) */
-        
-    }) 
-    .catch(err => {
-        console.log(err);
-        res.status(500).json({
-            error: err
-        });
-    })
-})
-});
-
-
-router.get('/:id', (req , res , next) => {
-    User.find({_id: req.params.id})    //check email first
-    .exec()
-    .then(user => { 
-        if (user.length < 1) {
-            res.status(401).json({
-                message: "user doesnt exist",    
-            })
-        } 
         res.status(200).json({
-            message: user,   
-        })
-    }) 
-    .catch(err => {
+          user: user[0],
+          posts: posts.reverse(),
+          isUserProfile: true,
+          followerInfo: followerInfo,
+          followingInfo: followingInfo,
+        });
+      } catch (err) {
         console.log(err);
         res.status(500).json({
-            error: err
+          error: err,
         });
+      }
     })
+    .catch((err) => {
+      res.status(500).json({
+        error: err,
+      });
+    });
 });
 
-
-router.patch('/edit', (req, res, next) => {
-    var token = req.body.token;
-    if (!token) {
-     return res.status(401).json({message: 'Must pass token'});
-    }
-  // Check token that was passed by decoding token using secret
-   jwt.verify(token, "secret", function(err, user) {
-     if(!user) {
-         res.json({
-             user: ""
-         })
-     }
-    User.find({_id: user.userId})    //check email first
-    .exec()
-    .then(user => { 
+router.get("/:id", (req, res, next) => {
+  if (!req.cookies.JWT) {
+    return res.status(401).json({
+      error: "Auth Failed",
+    });
+  }
+  jwt
+    .verify(req.cookies.JWT, "secret", async function (err, currUser) {
+      if (!currUser) {
+        return res.status(401).json({
+          error: "Auth Failed",
+        });
+      }
+      try {
+        var user = await User.find({ _id: req.params.id });
         if (user.length < 1) {
-            res.status(401).json({
-                message: "user doesnt exist",    //dont wanna tell them its coz of username coz that would give info to hack
-            })
-        } 
+          return res.status(404).json({
+            error: "user doesnt exist",
+          });
+        }
+        let posts = await Post.find({ _id: { $in: user[0].posts } }).lean();
+        posts.forEach((post) => {
+          //we have to do it this way because the includes comparison returns false always
+          let result = false;
+          for (let id of post.likedBy) {
+            if (id == currUser.userId) {
+              result = true;
+              break;
+            }
+          }
+          post.isLiked = result;
+        });
+        let followerInfo = await User.find({ _id: { $in: user[0].followers } }).select([
+          "userImage",
+          "username",
+        ]);
+        console.log(followerInfo);
+        let followingInfo = await User.find({ _id: { $in: user[0].following } }).select([
+          "userImage",
+          "username",
+        ]);
+        console.log(followingInfo);
+        return res.status(200).json({
+          user: user[0],
+          posts: posts.reverse(),
+          isUserProfile: user[0]._id == currUser.userId,
+          isFollowing: user[0].followers.includes(currUser.userId),
+          followerInfo: followerInfo,
+          followingInfo: followingInfo,
+        });
+      } catch (err) {
+        console.log(err);
+        res.status(500).json({
+          error: err,
+        });
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({
+        error: err,
+      });
+    });
+});
+
+router.patch("/edit", (req, res, next) => {
+  if (!req.cookies.JWT) {
+    return res.status(401).json({
+      message: "Auth Failed",
+    });
+  }
+  jwt.verify(req.cookies.JWT, "secret", async function (err, user) {
+    if (!user) {
+      return res.status(401).json({
+        message: "Auth Failed",
+      });
+    }
+    User.find({ _id: user.userId }) //check email first
+      .exec()
+      .then((user) => {
+        if (user.length < 1) {
+          res.status(401).json({
+            message: "user doesnt exist", //dont wanna tell them its coz of username coz that would give info to hack
+          });
+        }
         const updateOps = {};
-        updateOps["username"] = req.body.username 
-        updateOps["bio"] = req.body.bio
-       // updateOps["genres"] = req.body.genres //CHANGE THIS TO PICTURE
-        User.update({_id: user[0]._id} ,  {$set: updateOps})  // if theres no password given
-        .exec()
-        .then(result =>{
+        updateOps["username"] = req.body.username;
+        updateOps["bio"] = req.body.bio;
+        // updateOps["genres"] = req.body.genres //CHANGE THIS TO PICTURE
+        User.update({ _id: user[0]._id }, { $set: updateOps }) // if theres no password given
+          .exec()
+          .then((result) => {
             console.log(result);
             res.status(200).json(result);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error:err
-            })
-        }) 
-    }) 
-    .catch(err => {
+          });
+      })
+      .catch((err) => {
         console.log(err);
         res.status(500).json({
-            error: err
-        });
-    })
-})
-});
-
-router.post('/signup', (req, res, next) => {
-    User.find({email: req.body.email})
-    .exec()
-    .then(user => {     // check if user exists
-        if (user.length >= 1) {
-            return res.status(409).json({
-                message: "Email already in use"         // 409 == conflict       
-        });
-    }
-    else {
-        bcrypt.hash(req.body.password, 10, (err, hash) => {
-            if (err) {
-                return res.status(500).json({
-                    error:err
-                })
-            }
-            else {
-                const user = new User ({   //Create the user 
-                    _id: new mongoose.Types.ObjectId(),
-                    email: req.body.email,
-                    password: hash,
-                    username: "User",
-                    bio: "Placeholder bio",
-                    following: [],
-                    posts: [],
-                    userImage: "uploads/defaultUser.png"     //default image
-                }); 
-                user.save()
-                .then(result => {   //Save them and let them sign in here
-                    console.log(result);
-                    const token = jwt.sign({                 //create token for valid user
-                        email: result.email,
-                        userId: result._id,
-                        posts: result.posts,
-                    }, 
-                    "secret",                //key
-                    {
-                        expiresIn: "1h"
-                    }
-                    );
-                    res.status(201).json({
-                        message: "user created",
-                        token: token
-                    })
-                })
-                .catch(err => {
-                    console.log(err);
-                    res.status(500).json({
-                        error: err
-                    });
-                })
-            }
-        })
-    }
-    })
-     
-    });
-
-    router.post('/login', (req, res, next) => {
-        User.find({email: req.body.email})    //check email first
-        .exec()
-        .then(user => { 
-            if (user.length < 1) {
-                res.status(401).json({
-                    message: "Auth Failed",    //dont wanna tell them its coz of username coz that would give info to hack
-                    debug: req.body.email + "w"
-                })
-            }
-            bcrypt.compare(req.body.password, user[0].password, (err, result) => {
-                if (err) {
-                    return res.status(401).json({
-                        message: "Auth Failed"    //dont wanna tell them its coz of username coz that would give info to hack
-                    })
-                }
-                if (result) {
-                    const token = jwt.sign({                 //create token for valid user
-                        email: user[0].email,
-                        posts: user[0].posts,
-                        userId: user[0]._id
-                    }, 
-                    "secret",                //key
-                    {
-                        expiresIn: "1h"
-                    }
-                );
-                    return res.status(200).json({           //if valid login, giv tokentoken
-                        message: "Auth successful",
-                        token: token
-                    });
-                }
-                res.status(401).json({
-                    message: "Auth Failed"    //dont wanna tell them its coz of username coz that would give info to hack
-                })
-
-            })
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
-            });
-        })
-    });
-
-    router.patch('/editimage', upload.single('userImage'), (req, res, next) => {
-        // check header or url parameters or post parameters for token
-        var token = req.body.token;
-        if (!token) {
-           return res.status(401).json({message: 'Must pass token'});
-        }
-        // Check token that was passed by decoding token using secret
-        jwt.verify(token, "secret", function(err, user) {
-           //return user using the id from w/in JWTToken
-           if(!user) {
-               res.json({
-                   user: ""
-               })
-           }
-        User.update({_id: user.userId} , {userImage : req.file.path})
-        .exec()
-        .then(result =>{
-            console.log(result);
-            res.status(200).json(result);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error:err
-            })
-        })
-    })
-    });
-
-    router.patch('/addimage', upload.single('userImage'), (req, res, next) => {
-        // check header or url parameters or post parameters for token
-        var token = req.body.token;
-        if (!token) {
-           return res.status(401).json({message: 'Must pass token'});
-        }
-        // Check token that was passed by decoding token using secret
-        jwt.verify(token, "secret", function(err, user) {
-           //return user using the id from w/in JWTToken
-           if(!user) {
-               res.json({
-                   user: ""
-               })
-           }
-        //We gotta get the user array of pics and then add this one along with the file name / date / caption.
-        //This should be added to the front of the array
-        User.update({_id: user.userId} , {$push: {posts: {id: req.body.id, path: req.file.path, date: req.body.date, likes: [], comments: []}}})
-        .exec()
-        .then(result =>{
-            console.log(result);
-            res.status(200).json(result);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error:err
-            })
-        })
-    })
-    });
-    router.patch('/dimage',  (req, res, next) => {
-        // check header or url parameters or post parameters for token
-        var token = req.body.token;
-        if (!token) {
-           return res.status(401).json({message: 'Must pass token'});
-        }
-        // Check token that was passed by decoding token using secret
-        jwt.verify(token, "secret", function(err, user) {
-           //return user using the id from w/in JWTToken
-           if(!user) {
-               res.json({
-                   user: ""
-               })
-           }
-           console.log(user)
-           var count = 0;
-           var newposts = req.body.posts
-           while (count < newposts.length) {
-               if(newposts[count].id == req.body.id) {
-                    console.log(newposts[count].id) 
-                    newposts.splice(count,1)
-                    break;
-               }
-               count++;
-           }
-        //We gotta get the user array of pics and then add this one along with the file name / date / caption.
-        //This should be added to the front of the array
-        User.update({_id: user.userId} , {posts: newposts})
-        .exec()
-        .then(result =>{
-            console.log(newposts);
-            res.status(200).json({
-                newposts: newposts
-            });
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error:err
-            })
-        })
-    })
-    });
-
-    router.patch('/like',  (req, res, next) => {
-        /**/
-        // check header or url parameters or post parameters for token
-        var token = req.body.token;
-        if (!token) {
-           return res.status(401).json({message: 'Must pass token'});
-        }
-        // Check token that was passed by decoding token using secret
-        jwt.verify(token, "secret", function(err, user) {
-           //return user using the id from w/in JWTToken
-           if(!user) {
-               res.json({
-                   user: ""
-               })
-           }
-           User.find({_id: req.body.id})    //check email first
-           .exec()
-           .then(user1 => { 
-               if (user1.length < 1) {
-                   res.status(401).json({
-                       message: "user doesnt exist",    
-                   })
-               } 
-               var count = 0;
-               var oldposts = user1[0].posts;
-               while (count < user1[0].posts.length) {
-                   if (user1[0].posts[count].id === req.body.picid) {
-                       oldposts[count].likes.push(user.userId)
-                       break;
-                   }
-                   count++;
-               }
-               User.update({_id: req.body.id} , {posts: oldposts})
-                .exec()
-                .then(result =>{
-                    res.status(200).json({
-                        oldposts: oldposts
-                    });
-                })
-                .catch(err => {
-                    console.log(err);
-                    res.status(500).json({
-                        error:err
-                    })
-                })
-           }) 
-           .catch(err => {
-               console.log(err);
-               res.status(500).json({
-                   error: err
-               });
-           })
-           
-        //We gotta get the user array of pics and then add this one along with the file name / date / caption.
-        //This should be added to the front of the array
-    })
-    });
-
-    router.patch('/comment',  (req, res, next) => {
-        /**/
-        // check header or url parameters or post parameters for token
-
-        var token = req.body.token;
-        if (!token) {
-           return res.status(401).json({message: 'Must pass token'});
-        }
-        // Check token that was passed by decoding token using secret
-        jwt.verify(token, "secret", function(err, user) {
-           //return user using the id from w/in JWTToken
-           if(!user) {
-               res.json({
-                   user: ""
-               })
-           }
-           User.find({_id: req.body.id})    //check email first
-           .exec()
-           .then(user1 => { 
-               if (user1.length < 1) {
-                   res.status(401).json({
-                       message: "user doesnt exist",    
-                   })
-               } 
-               var count = 0;
-               var oldposts = user1[0].posts;
-               while (count < user1[0].posts.length) {
-                   if (user1[0].posts[count].id === req.body.picid) {
-                       oldposts[count].comments.push({id: user.userId, username: req.body.username, content: req.body.content})
-                       break;
-                   }
-                   count++;
-               }
-               User.update({_id: req.body.id} , {posts: oldposts})
-                .exec()
-                .then(result =>{
-                    res.status(200).json({
-                        oldposts: oldposts,
-                        newModalPostComments: oldposts[count].comments
-                    });
-                })
-                .catch(err => {
-                    console.log(err);
-                    res.status(500).json({
-                        error:err
-                    })
-                })
-           }) 
-           .catch(err => {
-               console.log(err);
-               res.status(500).json({
-                   error: err
-               });
-           })
-           
-        //We gotta get the user array of pics and then add this one along with the file name / date / caption.
-        //This should be added to the front of the array
-    })
-    });
-
-    router.patch('/follow',  (req, res, next) => {
-        /**/
-        // check header or url parameters or post parameters for token
-        var token = req.body.token;
-        if (!token) {
-           return res.status(401).json({message: 'Must pass token'});
-        }
-        // Check token that was passed by decoding token using secret
-        jwt.verify(token, "secret", function(err, user) {
-           //return user using the id from w/in JWTToken
-           if(!user) {
-               res.json({
-                   user: ""
-               })
-           }
-           User.find({_id: req.body.id})    //check email first
-           .exec()
-           .then(user1 => { 
-               if (user1.length < 1) {
-                   res.status(401).json({
-                       message: "user doesnt exist",    
-                   })
-               } 
-               var newfollowing = user1[0].following
-               newfollowing.push(user.userId)
-               User.update({_id: req.body.id} ,  {following : newfollowing })
-                .exec()
-                .then(result =>{
-                    res.status(200).json({
-                        newfollowing: newfollowing
-                    });
-                })
-                .catch(err => {
-                    console.log(err);
-                    res.status(500).json({
-                        error:err
-                    })
-                })
-           }) 
-           .catch(err => {
-               console.log(err);
-               res.status(500).json({
-                   error: err
-               });
-           })
-           
-        //We gotta get the user array of pics and then add this one along with the file name / date / caption.
-        //This should be added to the front of the array
-    })
-    });
-
-
-    router.get('/me/from/token/:token', function(req, res, next) {
-        // check header or url parameters or post parameters for token
-        var token = req.params.token;
-        if (!token) {
-         return res.status(401).json({message: 'Must pass token'});
-        }
-      // Check token that was passed by decoding token using secret
-       jwt.verify(token, "secret", function(err, user) {
-         //return user using the id from w/in JWTToken
-         if(!user) {
-             res.json({
-                 user: ""
-             })
-         }
-          User.findById({
-          '_id': user.userId
-          }, function(err, user) {
-               //Note: you can renew token by creating new token(i.e.    
-               //refresh it)w/ new expiration time at this point, but I’m 
-               //passing the old token back.
-               // var token = utils.generateToken(user);
-              res.json({
-                  user: user,  //return both user and token
-                  token: token
-              });
-           });
+          error: err,
         });
       });
+  });
+});
 
-    router.delete('/:userId', (req, res, next) => {
-        User.deleteOne({_id: req.params.userId})
-        .exec()
-        .then(result => {
+router.patch("/editimage", upload.single("userImage"), (req, res, next) => {
+  // check header or url parameters or post parameters for token
+  if (!req.cookies.JWT) {
+    return res.status(401).json({
+      message: "Auth Failed",
+    });
+  }
+  jwt.verify(req.cookies.JWT, "secret", async function (err, user) {
+    if (!user) {
+      return res.status(401).json({
+        message: "Auth Failed",
+      });
+    }
+    User.update({ _id: user.userId }, { userImage: req.file.path })
+      .exec()
+      .then((result) => {
+        console.log(result);
+        res.status(200).json(result);
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(500).json({
+          error: err,
+        });
+      });
+  });
+});
+
+router.patch("/follow", (req, res, next) => {
+  if (!req.cookies.JWT) {
+    return res.status(401).json({
+      message: "Auth Failed",
+    });
+  }
+  jwt.verify(req.cookies.JWT, "secret", function (err, currUser) {
+    if (!currUser) {
+      return res.status(401).json({
+        message: "Auth Failed",
+      });
+    }
+    User.find({ _id: req.body.id })
+      .exec()
+      .then(async (user) => {
+        if (user.length < 1) {
+          res.status(401).json({
+            message: "user doesnt exist",
+          });
+        }
+        var newfollowers = user[0].followers;
+        newfollowers.push(currUser.userId);
+        let user1 = await User.find({ _id: currUser.userId }).select([
+          "following",
+          "userImage",
+          "username",
+        ]);
+        var newfollowing = user1[0].following;
+        newfollowing.push(req.body.id);
+        let res1 = await User.update(
+          { _id: currUser.userId },
+          { following: newfollowing }
+        );
+        User.update({ _id: req.body.id }, { followers: newfollowers })
+          .exec()
+          .then((result) => {
             res.status(200).json({
-                message: "User deleted"
-            })
-        }) 
-        .catch(err => {
+              newFollower: user1[0],
+            });
+          })
+          .catch((err) => {
             console.log(err);
             res.status(500).json({
-                error: err
+              error: err,
             });
-        })
-    });
+          });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(500).json({
+          error: err,
+        });
+      });
+  });
+});
 
-    router.delete('/:userId', (req, res, next) => {
-        User.deleteOne({_id: req.params.userId})
-        .exec()
-        .then(result => {
-            res.status(200).json({
-                message: "User deleted"
-            })
-        }) 
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
-            });
-        })
+router.patch("/unfollow/", async (req, res, next) => {
+  if (!req.cookies.JWT) {
+    return res.status(401).json({
+      message: "Auth Failed (no cookie)",
     });
+  }
+  jwt
+    .verify(req.cookies.JWT, "secret", async function (err, currUser) {
+      if (!currUser) {
+        return res.status(401).json({
+          message: "Auth Failed (theres a cookie but jwt expired)",
+        });
+      }
+      try {
+        var user = await User.find({ _id: req.body.id }).select(["followers"]);
+        if (user.length < 1) {
+          res.status(500).json({
+            message: "user doesnt exist",
+          });
+        }
+        let newfollowers = user[0].followers;
+        newfollowers = newfollowers.filter((follower) => {
+          return follower.toString() != currUser.userId.toString();
+        });
+        let result = await User.update({ _id: req.body.id }, { followers: newfollowers });
+        let user1 = await User.find({ _id: currUser.userId }).select(["following"]);
+        let newfollowing = user1[0].following;
+        newfollowing = newfollowing.filter((following) => {
+          return following.toString() != user[0]._id.toString();
+        });
+        let result1 = await User.update(
+          { _id: user1[0]._id },
+          { following: newfollowing }
+        );
+        res.status(200).json({
+          message: "success",
+          _id: currUser.userId,
+        });
+      } catch (err) {
+        res.status(500).json({
+          error: err,
+        });
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({
+        error: err,
+      });
+    });
+});
 
+router.get("/", (req, res, next) => {
+  if (!req.cookies.JWT) {
+    return res.status(401).json({
+      error: "Auth Failed (no cookie)",
+    });
+  }
+  jwt.verify(req.cookies.JWT, "secret", function (err, currUser) {
+    if (!currUser) {
+      return res.status(401).json({
+        error: "Auth Failed (theres a cookie but jwt expired)",
+      });
+    }
+    User.find()
+      .exec()
+      .then((user) => {
+        if (user.length < 1) {
+          res.status(401).json({
+            message: "user doesnt exist",
+          });
+        }
+        res.status(200).json({
+          message: user,
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.status(500).json({
+          error: err,
+        });
+      });
+  });
+});
+
+router.delete("/:userId", (req, res, next) => {
+  User.deleteOne({ _id: req.params.userId })
+    .exec()
+    .then((result) => {
+      res.status(200).json({
+        message: "User deleted",
+      });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({
+        error: err,
+      });
+    });
+});
 
 module.exports = router;

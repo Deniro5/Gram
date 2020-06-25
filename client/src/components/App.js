@@ -1,37 +1,43 @@
-import React, { Component } from 'react';
-import { Router } from 'react-router';
-import { Switch, Route } from 'react-router-dom';
-import createHistory from 'history/createBrowserHistory';
-import Header from './Header';  
-import Login from './Login';  
-import Footer from './Footer';
-import Profile from './Profile';
-import Edit from './Edit';
-import error404 from './404'
-import '../scss/app.scss';
+import React, { Component } from "react";
+import { HashRouter as Router, Switch, Route } from "react-router-dom";
+import createHistory from "history/createBrowserHistory";
+import Header from "./Header";
+import Login from "./Login";
+import Profile from "./Profile";
+import Edit from "./Edit";
+import error404 from "./404";
+import Main from "./Main";
+import "../scss/app.scss";
 
 const history = createHistory();
 
-
-
-class App extends Component {
-  render() {
-    return (
-      <Router history={history}>
-      <div className="app-container">
-        <Header/>
+const App = () => {
+  return (
+    <Router history={history}>
+      <div className='app-container'>
         <Switch>
-          <Route exact path="/" component={Edit} />
-          <Route exact path="/login" component={Login} />
-          <Route exact path="/home" component={Edit} />
-          <Route exact path="/:userId" component={Profile} />
-          <Route exact path="/*" component={error404} />
+          <Route exact path='/login' component={Login} />
+          <Route exact path='/edit'>
+            <Header />
+            <Edit />
+          </Route>
+          <Route exact path='/home'>
+            <Header />
+            <Main />
+          </Route>
+          <Route exact path='/'>
+            <Header />
+            <Main />
+          </Route>
+          <Route exact path='/:userId'>
+            <Header />
+            <Profile />
+          </Route>
+          <Route exact path='/*' component={error404} />
         </Switch>
-        <Footer/>
       </div>
-      </Router>
-    );
-  }
-}
+    </Router>
+  );
+};
 
 export default App;

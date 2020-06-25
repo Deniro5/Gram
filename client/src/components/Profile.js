@@ -1,266 +1,292 @@
-import React, { Component} from 'react';
-import Grid from '@material-ui/core/Grid';
-import Modal from '@material-ui/core/Modal';
-import Picmodal from './Picmodal'
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router";
+import Grid from "@material-ui/core/Grid";
+import Modal from "@material-ui/core/Modal";
+import Picmodal from "./Picmodal";
+import UserList from "./UserList";
 
+const Profile = () => {
+  const [posts, setPosts] = useState([]);
+  const [following, setFollowing] = useState([]);
+  const [followers, setFollowers] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalPostImg, setModalPostImg] = useState("");
+  const [modalPostDate, setModalPostDate] = useState("");
+  const [modalPostComments, setModalPostComments] = useState([]);
+  const [modalPostLikes, setModalPostLikes] = useState(0);
+  const [modalPostId, setModalPostId] = useState(0);
+  const [modalIndex, setModalIndex] = useState(-1);
+  const [user, setUser] = useState({});
+  const [userexists, setUserexists] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isUser, setIsUser] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const { userId } = useParams();
 
-class Profile extends Component {
+  useEffect(
+    () => {
+      fetch("users/" + userId, {
+        method: "get",
+        credentials: "include",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.error) {
+          } else {
+            setUser(json.user);
+            setPosts(json.posts);
+            setFollowers(json.followerInfo);
+            setFollowing(json.followingInfo);
+            setUserexists(true);
+            setIsUser(json.isUserProfile);
+            setIsFollowing(json.isFollowing);
+          }
+          setIsLoaded(true);
+        });
+    },
+    [userId]
+  );
 
-  state = {
-    modalOpen:false,
-    user: {},
-    posts: [],
-    following: [],
-    userimage: "http://localhost:8000/uploads/defaultUser.png",
-    modalPostImg: "",
-    modalPostDate: "",
-    modalPostLikes: 0,
-    modalPostId: 0,
-    curruserid: "",
-    currusername: "",
-    userexists:false,
-    loggedIn:false,
-    isLoaded: false,
-  }
+  const handleOpen = (
+    newModalPostImg,
+    newModalPostDate,
+    newModalPostLikes,
+    newModalPostComments,
+    newModalPostId,
+    newModalIndex
+  ) => {
+    //Open the modal and set all the modal properties
+    setModalOpen(true);
+    setModalPostImg(newModalPostImg);
+    setModalPostDate(newModalPostDate);
+    setModalPostLikes(newModalPostLikes);
+    setModalPostComments(newModalPostComments);
+    setModalPostId(newModalPostId);
+    setModalIndex(newModalIndex);
+  };
 
-  componentWillMount() {
-    fetch('http://localhost:8000/users/' + this.props.match.params.userId, {
-      method: 'get',
+  const handleClose = () => {
+    setModalOpen(false);
+  };
+
+  const closeUserList = () => {
+    setShowFollowing(false);
+    setShowFollowers(false);
+  };
+
+  const like = (picid, index, e) => {
+    fetch("posts/like/" + picid, {
+      method: "PATCH",
+      credentials: "include",
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        Accept: "application/json",
+        "Content-Type": "application/json",
       },
     })
-    .then((res) => res.json())
-    .then((json) => {
-            if (!json.message) {
-              
-            }
-            else {
-            this.setState({
-                user: json.message[0],
-                posts: json.message[0].posts.reverse(),
-                following: json.message[0].following,
-                userimage: "http://localhost:8000/" + json.message[0].userImage,
-                userexists:true,
-            })
-            }
-            this.setState({
-              isLoaded: true
-            })
-        }); 
-        if (localStorage.getItem("token") != null) {
-          fetch('http://localhost:8000/users/userfromtoken/' + localStorage.getItem("token"), {
-            method: 'get',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-          })
-          .then((res) => res.json())
-          .then((json) => {
-                  if (!json.message) {
-                   
-                  }
-                  else {
-                  this.setState({
-                    curruserid: json.message._id,
-                    currusername: json.message.username,
-                    loggedIn:true,
-                    //userimage: "http://localhost:8000/" + json.message.userImage
-                  })
-                }
-              }); 
-            }
-    }
+      .then((response) => response.json())
+      .catch((error) => alert(error))
+      .then((response) => {
+        let newPosts = [...posts];
+        newPosts[index].isLiked = true;
+        newPosts[index].likes += 1;
+        setPosts(newPosts);
+      });
+    e.stopPropagation();
+  };
 
-    routerWillLeave(nextState) { // return false to block navigation, true to allow
-      if (nextState.action === 'POP') {
-        
-      }
-    }
-
-    handleOpen = (newModalPostImg, newModalPostDate, newModalPostLikes, newModalPostComments, newModalPostId) => {  
-      var temp = [];
-      var count = newModalPostComments.length-1;
-      while (count > -1) {
-        temp.push(newModalPostComments[count])
-        count--;
-      }
-      this.setState({
-        modalOpen: true,
-        modalPostImg: newModalPostImg,
-        modalPostDate: newModalPostDate,
-        modalPostLikes: newModalPostLikes,
-        modalPostComments: temp,
-        modalPostId: newModalPostId,
-      })
-    }
-
-
-  handleClose = () => {
-    this.setState({
-      modalOpen: false
-    })
-  }
-
-
-  like = (picid, e ) => {
-    fetch('http://localhost:8000/users/like', {
-      method: 'PATCH',
+  const submitComment = (content, index, picid) => {
+    fetch("posts/comment/" + picid, {
+      method: "POST",
+      credentials: "include",
       headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-        token: localStorage.getItem("token"),
-        id: this.state.user._id,
-        picid: picid,
-      })
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        content: content,
+      }),
     })
-    .then(response => response.json())
-    .catch(error => alert(error))
-    .then(response => {
-      //console.log('Success:', response)
-      this.setState({
-        posts: response.oldposts.reverse(),
+      .then((response) => response.json())
+      .catch((error) => alert(error))
+      .then((response) => {
+        let newPosts = [...posts];
+        newPosts[index].comments = [response.newComment, ...newPosts[index].comments];
+        setPosts(newPosts);
+        setModalPostComments(newPosts[index].comments);
+      });
+  };
 
-      })
-      }
-    ); 
-    e.stopPropagation()
-  }
-
-  submitComment = (content, picid) => {
-   // alert( "Content: " + content + " picid " + picid);
-    fetch('http://localhost:8000/users/comment', {
-      method: 'PATCH',
+  const follow = () => {
+    fetch("users/follow", {
+      method: "PATCH",
+      credentials: "include",
       headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-        token: localStorage.getItem("token"),
-        id: this.state.user._id,
-        username: this.state.currusername,
-        picid: picid,
-        content: content
-      })
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: user._id,
+      }),
     })
-    .then(response => response.json())
-    .catch(error => alert(error))
-    .then(response => {
-      //console.log('Success:', response)
-      this.setState({
-        posts: response.oldposts.reverse(),
-        modalPostComments: response.newModalPostComments.reverse(),
-      })
-      }
-    ); 
-  }
+      .then((response) => response.json())
+      .catch((error) => alert(error))
+      .then((response) => {
+        setFollowers([response.newFollower, ...followers]);
+        setIsFollowing(true);
+      });
+  };
 
-  follow = () => {
-    // alert( "Content: " + content + " picid " + picid);
-     fetch('http://localhost:8000/users/follow', {
-       method: 'PATCH',
-       headers: {
-         'Accept': 'application/json',
-         'Content-Type': 'application/json'
-       },
-       body: JSON.stringify({
-         token: localStorage.getItem("token"),
-         id: this.state.user._id,
-       })
-     })
-     .then(response => response.json())
-     .catch(error => alert(error))
-     .then(response => {
-       //console.log('Success:', response)
-       this.setState({
-         following: response.newfollowing,
-       })
-       }
-     ); 
-   }
+  const unfollow = () => {
+    fetch("users/unfollow", {
+      method: "PATCH",
+      credentials: "include",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: user._id,
+      }),
+    })
+      .then((response) => response.json())
+      .catch((error) => alert(error))
+      .then((response) => {
+        if (!response.error) {
+          let newFollowers = [...followers];
+          newFollowers = newFollowers.filter((followers) => {
+            return followers._id.toString() != response._id.toString();
+          });
+          setFollowers(newFollowers);
+          setIsFollowing(false);
+        }
+      });
+  };
 
-  render() {
-    var posts = [];
-    var count = 0;
-
-    if (!this.state.isLoaded) {
-      return(    
-        <div className = "errorContainer">
-            <img src = "../img/loading.gif" className = "loadingWheel" alt = "loading"/>
-        </div>)
-    }
-    else if (!this.state.userexists) {
-      return(    
-        <div className = "errorContainer">
-          <h1>Something Went Wrong...</h1> 
-          <p> (Page not found) </p>
-        </div>)
-    }
-    while (count < this.state.posts.length) {
-      var likebutton =[];
-      if (this.state.posts[count].likes.includes(this.state.curruserid)) {
-        likebutton.push(<button style = {{background: "red"}} className = "homeImageOverlayLike" onClick = {this.like.bind(this, this.state.posts[count].id)}> Liked </button>)
-      }
-      else if (this.state.curruserid.length>0) {
-        likebutton.push(<button className = "homeImageOverlayLike" onClick = {this.like.bind(this, this.state.posts[count].id)}> Like </button>)
-      }
-      posts.push(
-        <Grid item xs={12} sm = {6}  md = {4}>
-        <div className = "homeImageContainer">
-          <div onClick = {this.handleOpen.bind(this,"http://localhost:8000/" + this.state.posts[count].path, this.state.posts[count].date, this.state.posts[count].likes.length, this.state.posts[count].comments, this.state.posts[count].id)} className = "homeImageOverlay">
-            {likebutton}
-          </div>
-          <img alt = "img" src = { "http://localhost:8000/" + this.state.posts[count].path}/>
-        </div>
-        </Grid>)
-      count++;
-    }
-
-    var followbutton = [];
-    if (this.state.curruserid.length === 0) {
-
-    }
-    else if (this.state.following.includes(this.state.curruserid)) {
-      followbutton.push(<button style = {{background:"grey"}}> Following </button>)
-    }
-    else if (this.state.curruserid !== this.state.user._id) {
-      followbutton.push(<button onClick = {this.follow}> Follow </button>)
-    }
- 
-    
+  if (!isLoaded) {
     return (
-        <div className = "homeContainer">
-             <div className = "profileContainer"> 
-              <div className = "profileImgContainer">
-                <img alt = "profpic" src = {this.state.userimage}/>
-                {followbutton}
-              </div>
-              <div className = "profileInfoContainer">
-                <h2> {this.state.user.username} </h2>
-                <p> <b> {this.state.following.length} Followers </b> </p>
-                <p> {this.state.user.bio} </p>
-              </div>
-             </div>
-             <div className = "homeGridContainer">
-             <Grid container spacing={3}>
-              {posts}    
-            </Grid>
-              </div>
-              <Modal
-              aria-labelledby="simple-modal-title"
-              aria-describedby="simple-modal-description"
-              open={this.state.modalOpen}
-              onClose={this.handleClose}
-            >
-              <Picmodal close = {this.handleClose} imgsrc = {this.state.modalPostImg} date = {this.state.modalPostDate} user = {this.state.user.username} likes = {this.state.modalPostLikes} comments = {this.state.modalPostComments} picid = {this.state.modalPostId} submitComment = {this.submitComment} loggedIn = {this.state.loggedIn}/>
-            </Modal>
-        </div>
+      <div className='errorContainer'>
+        <img src='../img/loading.gif' className='loadingWheel' alt='loading' />
+      </div>
+    );
+  } else if (!userexists) {
+    return (
+      <div className='errorContainer'>
+        <h1>Something Went Wrong...</h1>
+        <p> (Page not found) </p>
+      </div>
     );
   }
-}
+  let displayPosts =
+    posts.length === 0 ? (
+      <Grid item xs={12}>
+        <h2 style={{ textAlign: "center", fontSize: "16px" }}> No posts to show </h2>
+      </Grid>
+    ) : (
+      posts.map((post, index) => (
+        <Grid item xs={12} sm={6} md={4}>
+          <div className='homeImageContainer'>
+            <div
+              onClick={() =>
+                handleOpen(
+                  "" + post.src,
+                  post.date,
+                  post.likes,
+                  post.comments,
+                  post._id,
+                  index
+                )
+              }
+              className='homeImageOverlay'>
+              {post.isLiked ? (
+                <button style={{ background: "red" }} className='homeImageOverlayLike'>
+                  Liked
+                </button>
+              ) : (
+                <button
+                  className='homeImageOverlayLike'
+                  onClick={(e) => like(post._id, index, e)}>
+                  Like
+                </button>
+              )}
+            </div>
+            <img alt='img' src={"" + post.src} />
+          </div>
+        </Grid>
+      ))
+    );
+
+  return (
+    <div className='homeContainer'>
+      <div className='profileContainer'>
+        <div className='profileImgContainer'>
+          <img alt='profpic' src={"" + user.userImage} />
+          {!isUser &&
+            (!isFollowing ? (
+              <button onClick={follow}> Follow </button>
+            ) : (
+              <button onClick={unfollow}> Unfollow </button>
+            ))}
+        </div>
+        <div className='profileInfoContainer'>
+          <h2> {user.username} </h2>
+          <p id='profileFollowerCount' onClick={() => setShowFollowers(true)}>
+            {followers.length} Followers
+          </p>
+          <p id='profileFollowerCount' onClick={() => setShowFollowing(true)}>
+            {following.length} Following
+          </p>
+          <p id='profileBio'> {user.bio} </p>
+        </div>
+      </div>
+      <div className='homeGridContainer'>
+        <Grid container spacing={3}>
+          {displayPosts}
+        </Grid>
+      </div>
+      <Modal
+        aria-labelledby='simple-modal-title'
+        aria-describedby='simple-modal-description'
+        open={modalOpen}
+        onClose={handleClose}>
+        <Picmodal
+          user={user.username}
+          close={handleClose}
+          imgsrc={modalPostImg}
+          date={modalPostDate}
+          likes={modalPostLikes}
+          comments={modalPostComments}
+          picid={modalPostId}
+          index={modalIndex}
+          submitComment={submitComment}
+        />
+      </Modal>
+      <Modal
+        aria-labelledby='simple-modal-title'
+        aria-describedby='simple-modal-description'
+        open={showFollowers || showFollowing}
+        onClose={closeUserList}>
+        <div className='userListModal'>
+          <img
+            alt='placeholder'
+            onClick={closeUserList}
+            src='/img/close.png'
+            id='userListModalClose'
+          />
+          {showFollowing ? (
+            <UserList users={following} title={"Following"} closeModal={closeUserList} />
+          ) : (
+            <UserList users={followers} title={"Followers"} closeModal={closeUserList} />
+          )}
+        </div>
+      </Modal>
+    </div>
+  );
+};
 
 export default Profile;

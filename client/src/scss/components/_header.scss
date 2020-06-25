@@ -1,91 +1,108 @@
 .headerContainer {
-    height: 70px;
-    text-align:center;
-    line-height:70px;
-    background: rgb(0, 0, 110);
-    position:fixed;
-    width:100%;
-    top:0px;
-    z-index: 1;
+  height: 70px;
+  text-align: center;
+  line-height: 70px;
+  background: rgb(0, 0, 110);
+  position: fixed;
+  width: 100%;
+  top: 0px;
+  z-index: 1;
 }
 
 .headerContainer input {
-    border:1px solid rgb(0, 0, 110);
-    transition:0.3s;
-    border-radius: 3px;
-    height:25px;
-	width:100%;
-	margin-top:15px;
-    font-size:16px;
-    padding:5px;
+  border: 1px solid rgb(0, 0, 110);
+  transition: 0.3s;
+  border-radius: 2px;
+  height: 25px;
+  width: 100%;
+  margin-top: 15px;
+  font-size: 16px;
+  padding: 5px 10px;
 }
 
-
 .headerLogo {
-    float: left;
-    height:50px;
-    width:70px;
-    margin-top:10px;
-    margin-left:20px;
-
+  float: left;
+  height: 25px;
+  width: 80px;
+  margin-top: 20px;
+  margin-left: 30px;
 }
 
 .headerItem {
-    display: inline-block;
-    margin-left:20px;
-    margin-right:20px;
-    cursor: pointer;
+  display: inline-block;
+  margin-left: 20px;
+  margin-right: 20px;
+  cursor: pointer;
 }
 
 .headerProfile {
-    float:right;
-    height:32px;
-    width:32px;
-    margin-top:15px;
-    margin-right:20px;
+  float: right;
+  height: 32px;
+  width: 32px;
+  margin-top: 15px;
+  margin-right: 20px;
+}
+
+.headerHome {
+  float: right;
+  height: 32px;
+  width: 32px;
+  margin-top: 15px;
+  margin-right: 20px;
 }
 
 .searchContainer {
-	position: relative;
-	width:175px;
-	margin:auto;
-    text-align: center;
+  position: relative;
+  width: 175px;
+  margin: auto;
+  text-align: center;
 }
 
 .searchResults {
-	position:absolute;
-	width:200px;
-	background: green;
-	left:-12px;
-	top:52px;
-	background:white;
-	border-radius:1px;
+  position: absolute;
+  width: 200px;
+  background: green;
+  left: -2px;
+  top: 52px;
+  background: white;
+  border-radius: 1px;
 }
 
 .searchResultsSegment {
-	height:50px;
-	padding-top:5px;
-	padding-bottom: 5px;
-	border:lightgray solid 1px;
-	cursor:pointer;
-	margin-top:-1px;
+  height: 50px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border: lightgray solid 1px;
+  cursor: pointer;
+  margin-top: -1px;
 }
 
 .searchResultsSegment:hover {
-	background:rgb(245, 245, 245);
+  background: rgb(245, 245, 245);
 }
 
 .searchResultsSegmentName {
-    font-weight:bold;
-    margin-top:-10px;
-    text-align:Center;
+  font-weight: bold;
+  margin-top: -10px;
+  text-align: Center;
 }
 
-.searchResultsSegmentImage{
-    width:45px;
-    height:45px;
-    border-radius:360px;
-    float:left;
-    margin-right:-25px;
-    margin-left:6px;
+.searchResultsSegmentImage {
+  width: 45px;
+  height: 45px;
+  border-radius: 360px;
+  float: left;
+  margin-right: -25px;
+  margin-left: 6px;
+}
+
+@media only screen and (max-width: 600px) {
+  .headerLogo {
+    display: none;
+  }
+  .headerHome {
+    float: left;
+    margin-left: 20px;
+    margin-right: 0px;
+  }
 }
