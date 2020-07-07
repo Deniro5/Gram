@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import MainPost from "./MainPost";
+import devMode from "./devmode";
 
 const Main = () => {
   const [posts, setPosts] = useState([]);
@@ -8,7 +9,7 @@ const Main = () => {
   const [isLoaded, setIsLoaded] = useState(0);
 
   const fetchPreview = (oldPosts) => {
-    fetch("posts/customfeed/" + maxPosts, {
+    fetch((devMode ? "http://localhost:5000/" : "/") + "posts/customfeed/" + maxPosts, {
       method: "get",
       credentials: "include",
       headers: {
@@ -41,6 +42,10 @@ const Main = () => {
     }
   };
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(
     () => {
       fetchPreview(posts);
@@ -56,7 +61,7 @@ const Main = () => {
   );
 
   const like = (picid, index) => {
-    fetch("posts/like/" + picid, {
+    fetch((devMode ? "http://localhost:5000/" : "/") + "posts/like/" + picid, {
       method: "PATCH",
       credentials: "include",
       headers: {
@@ -75,7 +80,7 @@ const Main = () => {
   };
 
   const submitComment = (content, index, picid) => {
-    fetch("posts/comment/" + picid, {
+    fetch((devMode ? "http://localhost:5000/" : "/") + "posts/comment/" + picid, {
       method: "POST",
       credentials: "include",
       headers: {

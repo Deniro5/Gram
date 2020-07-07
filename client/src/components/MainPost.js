@@ -1,22 +1,17 @@
 import React, { useState, Fragment } from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter, Link } from "react-router-dom";
+import devMode from "./devmode";
+
+const linkStyle = {
+  textDecoration: "none",
+  color: "black",
+};
 
 const MainPost = (props) => {
   const [showWriteComment, setShowWriteComment] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [comment, setComment] = useState("");
-  const {
-    _id,
-    author,
-    date,
-    likedBy,
-    likes,
-    comments,
-    src,
-    authorName,
-    isLiked,
-    index,
-  } = props;
+  const { _id, author, date, likes, comments, src, authorName, isLiked, index } = props;
 
   const goToProfile = (id) => {
     props.history.push("/" + id);
@@ -35,11 +30,16 @@ const MainPost = (props) => {
 
   return (
     <div className='mainPost'>
-      <img src={"" + src} />
+      <img alt='post' src={(devMode ? "http://localhost:5000/" : "/") + src} />
       <div style={{ float: "right", margin: "20px", fontSize: "12px" }}>
-        {likes} <img id='mainPostLikes' src='../img/like.png' />
+        {likes} <img alt='like' id='mainPostLikes' src='../img/like.png' />
       </div>
-      <p id='mainPostAuthor'> Posted by: {authorName} </p>
+      <p id='mainPostAuthor'>
+        Posted by:
+        <Link style={linkStyle} to={"/" + author}>
+          {" " + authorName}
+        </Link>
+      </p>
       <p id='mainPostDate'> {date} </p>
       {!isLiked ? (
         <button className='mainPostLike' onClick={like}>

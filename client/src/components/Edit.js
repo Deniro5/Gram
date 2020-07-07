@@ -5,6 +5,7 @@ import Picmodal from "./Picmodal";
 import AddCircle from "@material-ui/icons/AddCircleOutline";
 import UserList from "./UserList";
 import { withRouter } from "react-router-dom";
+import devMode from "./devmode";
 
 const Edit = (props) => {
   const [username, setUsername] = useState("");
@@ -30,7 +31,7 @@ const Edit = (props) => {
   const add = useRef(null);
 
   useEffect(() => {
-    fetch("users/" + "userprofile", {
+    fetch((devMode ? "http://localhost:5000/" : "/") + "users/userprofile", {
       method: "get",
       credentials: "include",
       headers: {
@@ -55,8 +56,9 @@ const Edit = (props) => {
           setPosts(json.posts);
           setFollowers(json.followerInfo);
           setFollowing(json.followingInfo);
-          setUserImage("" + user.userImage);
+          setUserImage((devMode ? "http://localhost:5000/" : "/") + user.userImage);
           setIsLoaded(true);
+          window.scrollTo(0, 0);
         }
       });
   }, []);
@@ -82,7 +84,7 @@ const Edit = (props) => {
   const logout = () => {
     const choice = window.confirm("Are you sure you want to log out?");
     if (choice) {
-      fetch("users/logout", {
+      fetch((devMode ? "http://localhost:5000/" : "/") + "users/logout", {
         method: "POST",
         credentials: "include",
         headers: {
@@ -114,7 +116,7 @@ const Edit = (props) => {
   };
 
   const save = () => {
-    fetch("users/edit", {
+    fetch((devMode ? "http://localhost:5000/" : "/") + "users/edit", {
       method: "PATCH",
       credentials: "include",
       headers: {
@@ -139,7 +141,7 @@ const Edit = (props) => {
       if (upload.current.files.length === 1) {
         var formData = new FormData();
         formData.append("userImage", upload.current.files[0]);
-        fetch("users/editimage", {
+        fetch((devMode ? "http://localhost:5000/" : "/") + "users/editimage", {
           method: "PATCH",
           credentials: "include",
           body: formData,
@@ -168,7 +170,7 @@ const Edit = (props) => {
         var formData = new FormData();
         formData.append("date", date);
         formData.append("userImage", add.current.files[0]);
-        fetch("posts/create", {
+        fetch((devMode ? "http://localhost:5000/" : "/") + "posts/create", {
           method: "POST",
           credentials: "include",
           body: formData,
@@ -202,7 +204,7 @@ const Edit = (props) => {
     var choice = window.confirm("Are you sure you want to delete this post?");
     if (false) {
       if (choice) {
-        fetch("posts/" + id, {
+        fetch((devMode ? "http://localhost:5000/" : "/") + "posts/" + id, {
           method: "DELETE",
           credentials: "include",
           headers: {
@@ -235,7 +237,7 @@ const Edit = (props) => {
   };
 
   const submitComment = (content, index, picid) => {
-    fetch("posts/comment/" + picid, {
+    fetch((devMode ? "http://localhost:5000/" : "/") + "posts/comment/" + picid, {
       method: "POST",
       credentials: "include",
       headers: {
@@ -291,7 +293,7 @@ const Edit = (props) => {
             Delete
           </button>
         </div>
-        <img alt='img' src={"" + post.src} />
+        <img alt='img' src={(devMode ? "http://localhost:5000/" : "/") + post.src} />
       </div>
     </Grid>
   ));

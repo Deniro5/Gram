@@ -1,5 +1,6 @@
 import React, { useState, Fragment } from "react";
 import { withRouter } from "react-router-dom";
+import devMode from "./devmode";
 
 const Picmodal = (props) => {
   const [showWriteComment, setShowWriteComment] = useState(false);
@@ -68,7 +69,11 @@ const Picmodal = (props) => {
       <p onClick={handleClose} className='homeImageModalClose'>
         x
       </p>
-      <img className='homeImageModalImg' alt='' src={props.imgsrc} />
+      <img
+        className='homeImageModalImg'
+        alt=''
+        src={(devMode ? "http://localhost:5000/" : "/") + props.imgsrc}
+      />
       <div className='commentContainer'>
         <div className='modalImageInfo'>
           <p style={{ cursor: "pointer", fontSize: "18px" }}>

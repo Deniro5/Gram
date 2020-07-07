@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { withRouter } from "react-router-dom";
+import devMode from "./devmode";
 
 const Header = (props) => {
   const [searchinput, setSearchinput] = useState("");
@@ -8,7 +9,7 @@ const Header = (props) => {
   const [searchShow, setSearchShow] = useState(false);
 
   useEffect(() => {
-    fetch("users", {
+    fetch((devMode ? "http://localhost:5000/" : "/") + "users", {
       method: "get",
       credentials: "include",
       headers: {
@@ -62,7 +63,11 @@ const Header = (props) => {
 
   let searchResults = searchresult.map((item) => (
     <div className={"searchResultsSegment"} onClick={() => gotoProfile(item._id)}>
-      <img src={"" + item.userImage} alt='' className='searchResultsSegmentImage' />
+      <img
+        src={(devMode ? "http://localhost:5000/" : "/") + item.userImage}
+        alt=''
+        className='searchResultsSegmentImage'
+      />
       <p id='result' className='searchResultsSegmentName'>
         {item.username}
       </p>

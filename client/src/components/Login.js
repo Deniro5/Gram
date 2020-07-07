@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import devMode from "./devmode";
 
 const Login = (props) => {
   const [signin, setSignin] = useState(true);
@@ -28,7 +29,7 @@ const Login = (props) => {
   };
 
   const submitHelper = (action, loginEmail, loginPassword) => {
-    fetch("users/" + action, {
+    fetch((devMode ? "http://localhost:5000/" : "/") + "users/" + action, {
       method: "POST",
       credentials: "include",
       headers: {

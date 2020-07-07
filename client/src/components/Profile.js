@@ -4,6 +4,7 @@ import Grid from "@material-ui/core/Grid";
 import Modal from "@material-ui/core/Modal";
 import Picmodal from "./Picmodal";
 import UserList from "./UserList";
+import devMode from "./devmode";
 
 const Profile = () => {
   const [posts, setPosts] = useState([]);
@@ -27,7 +28,7 @@ const Profile = () => {
 
   useEffect(
     () => {
-      fetch("users/" + userId, {
+      fetch((devMode ? "http://localhost:5000/" : "/") + "users/" + userId, {
         method: "get",
         credentials: "include",
         headers: {
@@ -48,6 +49,7 @@ const Profile = () => {
             setIsFollowing(json.isFollowing);
           }
           setIsLoaded(true);
+          window.scrollTo(0, 0);
         });
     },
     [userId]
@@ -81,7 +83,7 @@ const Profile = () => {
   };
 
   const like = (picid, index, e) => {
-    fetch("posts/like/" + picid, {
+    fetch((devMode ? "http://localhost:5000/" : "/") + "posts/like/" + picid, {
       method: "PATCH",
       credentials: "include",
       headers: {
@@ -101,7 +103,7 @@ const Profile = () => {
   };
 
   const submitComment = (content, index, picid) => {
-    fetch("posts/comment/" + picid, {
+    fetch((devMode ? "http://localhost:5000/" : "/") + "posts/comment/" + picid, {
       method: "POST",
       credentials: "include",
       headers: {
@@ -123,7 +125,7 @@ const Profile = () => {
   };
 
   const follow = () => {
-    fetch("users/follow", {
+    fetch((devMode ? "http://localhost:5000/" : "/") + "users/follow", {
       method: "PATCH",
       credentials: "include",
       headers: {
@@ -143,7 +145,7 @@ const Profile = () => {
   };
 
   const unfollow = () => {
-    fetch("users/unfollow", {
+    fetch((devMode ? "http://localhost:5000/" : "/") + "users/unfollow", {
       method: "PATCH",
       credentials: "include",
       headers: {
@@ -160,7 +162,7 @@ const Profile = () => {
         if (!response.error) {
           let newFollowers = [...followers];
           newFollowers = newFollowers.filter((followers) => {
-            return followers._id.toString() != response._id.toString();
+            return followers._id.toString() !== response._id.toString();
           });
           setFollowers(newFollowers);
           setIsFollowing(false);
@@ -215,7 +217,7 @@ const Profile = () => {
                 </button>
               )}
             </div>
-            <img alt='img' src={"" + post.src} />
+            <img alt='img' src={(devMode ? "http://localhost:5000/" : "/") + post.src} />
           </div>
         </Grid>
       ))
@@ -225,7 +227,10 @@ const Profile = () => {
     <div className='homeContainer'>
       <div className='profileContainer'>
         <div className='profileImgContainer'>
-          <img alt='profpic' src={"" + user.userImage} />
+          <img
+            alt='profpic'
+            src={(devMode ? "http://localhost:5000/" : "/") + user.userImage}
+          />
           {!isUser &&
             (!isFollowing ? (
               <button onClick={follow}> Follow </button>

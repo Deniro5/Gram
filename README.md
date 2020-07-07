@@ -1,4 +1,0 @@
-# Gram
-
-Instagram Inspired app
-

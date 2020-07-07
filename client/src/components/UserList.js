@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import devMode from "./devmode";
 
 const linkStyle = {
   textDecoration: "none",
@@ -44,7 +45,7 @@ const UserList = (props) => {
               <div onClick={closeModal} className='userListResultsSegment'>
                 <img
                   alt='productImg'
-                  src={"" + user.userImage}
+                  src={(devMode ? "http://localhost:5000/" : "/") + user.userImage}
                   className='userListResultsSegmentImg'
                 />
                 <p className='userListResultsSegmentName'>{user.username}</p>
